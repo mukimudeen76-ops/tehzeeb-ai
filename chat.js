@@ -11,9 +11,10 @@ export default async function handler(req, res) {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
+    console.error('Missing ANTHROPIC_API_KEY in environment');
     return res.status(500).json({
       error:
-        'ANTHROPIC_API_KEY environment variable Vercel par set nahi hai. Project Settings > Environment Variables mein daalo.'
+        'ANTHROPIC_API_KEY environment variable Vercel par set nahi hai. Project Settings > Environment Variables mein daalo and redeploy.'
     });
   }
 
@@ -24,6 +25,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'messages array zaroori hai.' });
     }
 
+    // Call Anthropic upstream
     const upstream = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -40,21 +42,47 @@ export default async function handler(req, res) {
       })
     });
 
-    const data = await upstream.json();
+    // Read raw text for better logging and safer parsing
+    const upstreamText = await upstream.text();
+    console.error('Anthropic upstream status:', upstream.status);
+    console.error('Anthropic upstream body:', upstreamText);
 
-    if (!upstream.ok) {
-      return res.status(upstream.status).json({
-        error: data?.error?.message || 'Anthropic API se error aaya.'
-      });
+    let data = null;
+    try {
+      data = upstreamText ? JSON.parse(upstreamText) : null;
+    } catch (e) {
+      // upstream did not return JSON
+      data = null;
     }
 
-    const replyText = (data.content || [])
-      .map((block) => (block.type === 'text' ? block.text : ''))
-      .filter(Boolean)
-      .join('\n');
+    if (!upstream.ok) {
+      const upstreamMsg = data?.error?.message || data?.message || upstreamText || 'Anthropic API se error aaya.';
+      return res.status(upstream.status).json({ error: upstreamMsg });
+    }
 
-    return res.status(200).json({ reply: replyText || '(khaali jawab mila)' });
+    // Try to extract reply text from known Anthropic shapes
+    let replyText = '';
+
+    if (data) {
+      // Newer Anthropic responses might have `completion` or `content`
+      if (typeof data.completion === 'string' && data.completion.trim()) {
+        replyText = data.completion.trim();
+      } else if (Array.isArray(data.content)) {
+        replyText = data.content
+          .map((block) => (block && block.type === 'text' ? block.text : ''))
+          .filter(Boolean)
+          .join('\n');
+      } else if (typeof data.output_text === 'string' && data.output_text.trim()) {
+        replyText = data.output_text.trim();
+      }
+    }
+
+    // Fallback if nothing parsed
+    replyText = replyText || '(khaali jawab mila)';
+
+    return res.status(200).json({ reply: replyText });
   } catch (err) {
-    return res.status(500).json({ error: 'Server error: ' + err.message });
+    console.error('Handler error:', err);
+    return res.status(500).json({ error: 'Server error: ' + (err && err.message ? err.message : String(err)) });
   }
 }
