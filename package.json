@@ -1,9 +1,0 @@
-{
-  "name": "tehzeeb-ai",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Tehzeeb AI — futuristic 3D chat assistant with a server-side brain (Anthropic API) on Vercel.",
-  "scripts": {
-    "dev": "vercel dev"
-  }
-}
