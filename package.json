@@ -1,0 +1,9 @@
+{
+  "name": "tehzeeb-ai",
+  "version": "2.0.0",
+  "description": "Tehzeeb AI — Hinglish AI chat powered by Claude on Netlify",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "@netlify/functions": "^2.8.1"
+  }
+}
