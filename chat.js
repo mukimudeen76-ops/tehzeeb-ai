@@ -1,4 +1,4 @@
-// api/chat.js
+parceliableiableironmentironmentapi/chat.js
 // Yeh Tehzeeb AI ka asli "dimag" hai — server par chalta hai.
 // API key kabhi bhi browser mein nahi jaati, sirf Vercel ke
 // Environment Variables mein rehti hai (ANTHROPIC_API_KEY).
@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     console.error('Missing ANTHROPIC_API_KEY in environment');
     return res.status(500).json({
       error:
-        'ANTHROPIC_API_KEY environment variable Vercel par set nahi hai. Project Settings > Environment Variables mein daalo and redeploy.'
+        'GEMINI_API_KEY environment variable Vercel par set nahi hai. Project Settings > Environment Variables mein daalo and redeploy.'
     });
   }
 
